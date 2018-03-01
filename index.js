@@ -16,13 +16,9 @@ const thenable = value => {
 };
 
 /***
- *
- * @param fn
- * @constructor
- *
  * Basic Promise Implementation Adapted From
- * https://www.promisejs.org/implementing/
- *
+ * @link https://www.promisejs.org/implementing/
+ * @param fn
  */
 function IPromise(fn) {
     let state = PENDING;
@@ -37,7 +33,6 @@ function IPromise(fn) {
         handlers.forEach(handleResult);
         handlers = null;
     }
-
 
     function reject(val) {
         state = REJECTED;
@@ -97,7 +92,7 @@ function IPromise(fn) {
         }
     }
 
-    this.complete = function(onFulfilled, onRejected, onFinally) {
+   function complete(onFulfilled, onRejected, onFinally) {
         setTimeout( _ => {
             handleResult({
                 onFulfilled,
@@ -105,12 +100,16 @@ function IPromise(fn) {
                 onFinally,
             });
         }, 0);
-    };
+    }
 
+    /**
+     * @param onFulfilled
+     * @param onRejected
+     * @return {IPromise}
+     */
     this.then = function (onFulfilled, onRejected) {
-        const self = this;
         return new IPromise(function(resolve, reject){
-            return self.complete(result => {
+            return complete(result => {
                 if (typeChecker.isFunction(onFulfilled)) {
                     try {
                         return resolve(onFulfilled(result));
@@ -134,11 +133,13 @@ function IPromise(fn) {
         });
     };
 
+    /**
+     * @param onRejected
+     * @return {IPromise}
+     */
     this.catch = function (onRejected) {
-        const self = this;
-
         return new IPromise(function(resolve, reject){
-            return self.complete(null, err => {
+            return complete(null, err => {
                 if (typeChecker.isFunction(onRejected)) {
                     try {
                         return resolve(onRejected(err));
@@ -152,11 +153,13 @@ function IPromise(fn) {
         });
     };
 
+    /**
+     * @param onFinally
+     * @return {IPromise}
+     */
     this.finally = function(onFinally){
-        const self = this;
-
         return new IPromise(function(resolve, reject) {
-            return self.complete(null, null, () => {
+            return complete(null, null, () => {
                 if (typeChecker.isFunction(onFinally)) {
                     try {
                         return onFinally();
@@ -171,18 +174,32 @@ function IPromise(fn) {
     resolver(fn, resolve, reject);
 }
 
+/**
+ * Returns a IPromise that resolve val
+ * @param val
+ * @return {IPromise}
+ */
 IPromise.resolve = val => {
     return new IPromise(resolve => {
         resolve(val);
     });
 };
 
+/**
+ * Returns a new IPromise that rejects err
+ * @param err
+ * @return {IPromise}
+ */
 IPromise.reject = err => {
     return new IPromise((_, reject) => {
         reject(err);
     });
 };
 
+/**
+ * @param promises
+ * @return {IPromise}
+ */
 IPromise.all = promises => {
     let resolved = [];
     return new IPromise((resolve, reject) => {
@@ -206,6 +223,10 @@ IPromise.all = promises => {
     });
 };
 
+/**
+ * @param promises
+ * @return {IPromise}
+ */
 IPromise.race = promises => {
     return new IPromise(function(resolve, reject) {
         promises.forEach(p => {
@@ -214,7 +235,7 @@ IPromise.race = promises => {
             } else {
                 resolve(p)
             }
-        })
+        });
     });
 };
 
